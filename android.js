@@ -61,7 +61,8 @@
       if (drag) fire('mouseup', lx, ly, 0, 0);
       mode = 2;
     } else if (mode === 3) {
-      block(e);
+      if (e.touches.length >= 2) mode = 2; // back to a multi-finger gesture: SolveSpace handles it
+      else block(e);
     }
   };
 
@@ -114,8 +115,10 @@
         }
       }
       mode = e.touches.length ? 3 : 0;
-    } else if (mode === 2) {           // first finger lifted: SolveSpace gets the end, ignore the rest
-      mode = e.touches.length ? 3 : 0;
+    } else if (mode === 2) {
+      // Finger lifted: SolveSpace gets the event. With two or more fingers left it keeps
+      // zooming/panning; with a single finger left, ignore it so it doesn't turn into a drag.
+      if (e.touches.length < 2) mode = e.touches.length ? 3 : 0;
     } else if (mode === 3) {
       block(e);
       if (!e.touches.length) mode = 0;

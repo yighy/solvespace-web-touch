@@ -1,7 +1,7 @@
 // Service worker: caches SolveSpace for offline use and adds the COOP/COEP headers
 // that GitHub Pages cannot send. Without them there is no SharedArrayBuffer, and the
 // web edition (built with threads) does not start.
-const CACHE = 'solvespace-20260929-0050';
+const CACHE = 'solvespace-20260929-0120';
 const CORE = [
   './', 'index.html', 'solvespace.js', 'solvespace.wasm', 'solvespace.data',
   'solvespaceui.js', 'solvespaceui.css', 'filemanagerui.js',
