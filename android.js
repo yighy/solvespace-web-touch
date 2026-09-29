@@ -33,6 +33,8 @@
   const TAP = 10, LONG = 500, DBL = 350;
   // mode: 0 = idle, 1 = one-finger gesture (handled here), 2 = multi-finger (SolveSpace), 3 = end of multi (ignored)
   let mode = 0, cv, sx, sy, lx, ly, drag = false, longT = null, longDone = false, lastTap = 0, ltx = 0, lty = 0;
+  // True while the delayed events that end a drag are still pending (see end()).
+  let releasing = false;
   const fire = (type, x, y, button, buttons, t = cv, m = {}) => t.dispatchEvent(new MouseEvent(type, {
     bubbles: true, cancelable: true, view: window, clientX: x, clientY: y, screenX: x, screenY: y,
     button, buttons, detail: type === 'dblclick' ? 2 : 1, ...m }));
@@ -95,11 +97,13 @@
         // circle...) on press. A release after it would clear the selection when the
         // finger is lifted over empty space.
         const x = lx, y = ly, t = cv;
+        releasing = true;
         requestAnimationFrame(() => requestAnimationFrame(() => {
           fire('mousemove', x, y, 0, 1, t);
           requestAnimationFrame(() => requestAnimationFrame(() => {
             fire('mouseup', x, y, 0, 0, t);
             fire('mousedown', x, y, 0, 1, t);
+            releasing = false;
           }));
         }));
       } else if (!longDone && e.type === 'touchend') {
@@ -128,6 +132,12 @@
   // Mouse / trackpad: left button held still = right click.
   // The real press is held back until we know whether it is a click, a drag or a long press.
   let mp = null, skipClick = false; // mp.s: 0 = pending, 1 = drag (real events), 2 = long press done
+  // A stylus keeps sending hover mouse events (no button) while and right after it touches
+  // the screen. Drop them until the touch gesture is fully over: a buttonless move arriving
+  // before the delayed release ends a selection rectangle without selecting anything.
+  const touchBusy = e => e.isTrusted && (mode === 1 || releasing);
+  ['mousedown', 'mousemove', 'mouseup'].forEach(type =>
+    addEventListener(type, e => { if (touchBusy(e)) block(e); }, true));
   addEventListener('mousedown', e => {
     if (!e.isTrusted || e.button !== 0 || !isCv(e.target)) return;
     skipClick = false;
